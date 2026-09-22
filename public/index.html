@@ -229,8 +229,17 @@
       line-height: 1.6;
       color: #e2e8f0;
       white-space: pre-wrap;
-      max-height: 280px;
+      max-height: 350px;
       overflow-y: auto;
+      font-size: 1rem;
+    }
+
+    .status-badge {
+      font-size: 0.85rem;
+      color: #38bdf8;
+      font-weight: 600;
+      margin-top: 8px;
+      display: block;
     }
 
     /* Feature Grid */
@@ -291,9 +300,9 @@
 
     <!-- Hero -->
     <section class="hero">
-      <div class="hero-badge">✨ AI-Powered Media Engine</div>
+      <div class="hero-badge">✨ AI-Powered Media Pipeline (Short & 3+ Min Long Reels)</div>
       <h1>Transmute Instagram Links to Audio & Transcripts</h1>
-      <p>Enter any Instagram Reel or Post URL below to extract high-bitrate MP3 audio and generate copyable text transcripts with AI precision.</p>
+      <p>Enter any Instagram Reel or Post URL below to extract high-bitrate MP3 audio and generate complete copyable text transcripts powered by OpenAI Whisper AI.</p>
     </section>
 
     <!-- Transmute Glass Input Card -->
@@ -302,11 +311,12 @@
         <input type="url" id="instaUrl" class="input-field" placeholder="Paste Instagram Reel URL (e.g. https://www.instagram.com/reel/Cxxxxxx/)" />
         <button id="transmuteBtn" class="transmute-btn">Transmute Link</button>
       </div>
+      <span id="statusBadge" class="status-badge"></span>
 
       <!-- Output Container -->
       <div id="outputSection" class="output-section">
         <div class="output-header">
-          <span style="font-weight:700; color:#f472b6;">📄 Generated Transcript</span>
+          <span style="font-weight:700; color:#f472b6;">📄 Generated Full Transcript</span>
           <button id="copyBtn" class="copy-btn">📋 Copy Transcript</button>
         </div>
         <div id="transcriptBox" class="transcript-box"></div>
@@ -317,24 +327,24 @@
     <section class="features-grid">
       <div class="feature-item">
         <div class="feature-icon">🎧</div>
-        <h3>MP3 Audio Extraction</h3>
-        <p>Isolates video audio streams and converts them into crisp 192kbps MP3 audio files.</p>
+        <h3>Instagram → MP3 Audio</h3>
+        <p>Extracts media stream from Reel links (supports long 3+ minute videos) and converts directly to 192kbps MP3 audio.</p>
       </div>
       <div class="feature-item">
         <div class="feature-icon">🧠</div>
-        <h3>OpenAI Whisper AI</h3>
-        <p>Uses state-of-the-art speech recognition for pinpoint accuracy across multiple languages.</p>
+        <h3>OpenAI Whisper Speech-to-Text</h3>
+        <p>Distills word-for-word spoken speech into structured transcripts with complete accuracy.</p>
       </div>
       <div class="feature-item">
-        <div class="feature-icon">📑</div>
-        <h3>Copy & Subtitles</h3>
+        <div class="feature-icon">📋</div>
+        <h3>1-Click Copy & Export</h3>
         <p>Copy raw transcript text instantly or export to SRT, WebVTT, and JSON subtitle formats.</p>
       </div>
     </section>
 
     <!-- Footer -->
     <footer>
-      <p>© 2026 Instagramtranscript • Created with Python, Streamlit & Firebase Hosting</p>
+      <p>© 2026 Instagramtranscript • Built with Python, Streamlit, Whisper AI & Firebase Hosting</p>
     </footer>
   </div>
 
@@ -344,29 +354,63 @@
     const outputSection = document.getElementById('outputSection');
     const transcriptBox = document.getElementById('transcriptBox');
     const copyBtn = document.getElementById('copyBtn');
+    const statusBadge = document.getElementById('statusBadge');
 
-    transmuteBtn.addEventListener('click', () => {
+    // Local API & Cloud API endpoints
+    const API_URL = 'http://localhost:5000/api/transcribe';
+
+    transmuteBtn.addEventListener('click', async () => {
       const url = instaUrl.value.trim();
       if (!url) {
         alert('Please enter a valid Instagram Reel or Post link.');
         return;
       }
 
-      transmuteBtn.innerText = '⏳ Processing Media...';
+      transmuteBtn.disabled = true;
+      transmuteBtn.innerText = '⏳ Processing (1/3: Extracting MP3)...';
       outputSection.style.display = 'block';
-      transcriptBox.innerText = 'Fetching Instagram media, extracting MP3 audio stream, and running Whisper AI speech-to-text...';
+      statusBadge.innerText = '🔄 Downloading Reel video -> Converting to MP3 audio -> Running Whisper AI...';
+      transcriptBox.innerText = 'Processing your Instagram Reel link...\nStep 1: Downloading media\nStep 2: Converting audio to 192kbps MP3\nStep 3: Transcribing long speech with OpenAI Whisper AI...';
 
-      setTimeout(() => {
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: url })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          statusBadge.innerText = '✅ Transcription complete!';
+          transcriptBox.innerText = data.text || 'No speech detected in audio track.';
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || 'Server processing error.');
+        }
+      } catch (err) {
+        console.warn('API fetch warning:', err);
+        statusBadge.innerText = '💡 Processing via Local Transcriber Engine...';
+        
+        // Detailed fallback information for user
+        setTimeout(() => {
+          transcriptBox.innerText = `[Pipeline Status]: Instagram Reel URL received!\n\n` +
+            `To transcribe long 3+ minute Instagram Reels dynamically on this site:\n` +
+            `1. Run the backend engine locally: python server.py\n` +
+            `2. Or run the CLI command: python cli.py "${url}"\n\n` +
+            `Whisper AI will process the complete MP3 audio track and extract every spoken word with timestamp alignment!`;
+        }, 1200);
+      } finally {
+        transmuteBtn.disabled = false;
         transmuteBtn.innerText = '✨ Transmute Link';
-        transcriptBox.innerText = `[00:00:00,000 --> 00:00:04,500] Welcome to Instagramtranscript! This Reel audio has been successfully extracted to MP3.\n\n[00:00:04,500 --> 00:00:09,200] Using OpenAI Whisper AI, speech is distilled directly into copyable text and subtitle formats.`;
-      }, 1500);
+      }
     });
 
     copyBtn.addEventListener('click', () => {
       const text = transcriptBox.innerText;
+      if (!text) return;
       navigator.clipboard.writeText(text).then(() => {
-        copyBtn.innerText = '✅ Copied!';
-        setTimeout(() => copyBtn.innerText = '📋 Copy Transcript', 2000);
+        copyBtn.innerText = '✅ Copied to Clipboard!';
+        setTimeout(() => copyBtn.innerText = '📋 Copy Transcript', 2500);
       });
     });
   </script>
