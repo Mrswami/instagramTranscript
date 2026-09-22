@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Output & Downloads
+output/
+*.mp3
+*.wav
+*.txt
+*.srt
+*.vtt
+*.json
+
+# Streamlit
+.streamlit/
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
