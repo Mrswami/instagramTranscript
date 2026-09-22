@@ -114,9 +114,15 @@ st.markdown("""
 output_dir = Path("output")
 transcriber = InstagramTranscriber(output_dir=output_dir)
 
-# Header Section
-st.markdown('<div class="hero-title">🎙️ Instagram Reel & Post Transcriber</div>', unsafe_allow_html=True)
-st.markdown('<div class="hero-subtitle">Convert any Instagram Reel or Post video/audio link into high-quality MP3 audio & detailed copyable text transcripts.</div>', unsafe_allow_html=True)
+# Header Section with Eyeball Logo
+col_logo, col_header = st.columns([1, 4])
+with col_logo:
+    if os.path.exists("assets/logo.jpg"):
+        st.image("assets/logo.jpg", use_container_width=True)
+with col_header:
+    st.markdown('<div class="hero-title">Instagramtranscript</div>', unsafe_allow_html=True)
+    st.markdown('<div class="hero-subtitle">Convert any Instagram Reel or Post video/audio link into high-quality MP3 audio & detailed copyable text transcripts.</div>', unsafe_allow_html=True)
+
 
 # Sidebar Configuration
 st.sidebar.markdown("### ⚙️ Engine Settings")
