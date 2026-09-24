@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: instagramtranscript-backend
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: 10000

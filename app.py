@@ -1,3 +1,13 @@
+"""
+Instagramtranscript Streamlit Web Dashboard.
+
+Provides an interactive user interface for running Instagram audio extraction
+and speech-to-text transcriptions directly in the browser with glassmorphism UI.
+
+Launch:
+    streamlit run app.py
+"""
+
 import streamlit as st
 import os
 import json
@@ -11,6 +21,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
 
 # Custom Glassmorphism CSS Styling
 st.markdown("""

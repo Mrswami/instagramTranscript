@@ -287,16 +287,33 @@
 <body>
   <div class="container">
     <!-- Header -->
+    <!-- Header -->
     <header>
       <a href="#" class="brand">
         <img src="logo.jpg" alt="Instagramtranscript Logo" class="brand-logo" />
         <span class="brand-title">Instagramtranscript</span>
       </a>
-      <a href="https://github.com/Mrswami/instagramTranscript.git" target="_blank" class="github-btn">
-        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-        GitHub Repo
-      </a>
+      <div style="display:flex; gap:12px; align-items:center;">
+        <button id="apiSettingsBtn" class="github-btn" style="cursor:pointer; background:rgba(225,48,108,0.15); border-color:rgba(225,48,108,0.4);">
+          ⚙️ API Engine Settings
+        </button>
+        <a href="https://github.com/Mrswami/instagramTranscript.git" target="_blank" class="github-btn">
+          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub Repo
+        </a>
+      </div>
     </header>
+
+    <!-- API Config Modal / Drawer -->
+    <div id="apiModal" style="display:none; background: rgba(15,23,42,0.95); border: 1px solid rgba(225,48,108,0.4); border-radius: 16px; padding: 20px; margin-bottom: 24px;">
+      <h4 style="margin-bottom:8px; color:#f472b6;">⚙️ Python API Endpoint Configuration</h4>
+      <p style="font-size:0.88rem; color:#94a3b8; margin-bottom:12px;">Configure your backend endpoint URL (Local PC or Cloud Hosted Backend on Render/Railway/Cloud Run):</p>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="apiEndpointInput" class="input-field" style="padding:10px 14px; font-size:0.9rem;" placeholder="e.g. https://your-backend.onrender.com/api/transcribe or http://localhost:5000/api/transcribe" />
+        <button id="saveApiBtn" class="transmute-btn" style="padding:10px 20px; font-size:0.9rem; white-space:nowrap;">Save Engine URL</button>
+      </div>
+      <span id="apiSavedMsg" style="display:none; color:#4ade80; font-size:0.85rem; margin-top:8px;">✅ Endpoint saved!</span>
+    </div>
 
     <!-- Hero -->
     <section class="hero">
@@ -355,9 +372,37 @@
     const transcriptBox = document.getElementById('transcriptBox');
     const copyBtn = document.getElementById('copyBtn');
     const statusBadge = document.getElementById('statusBadge');
+    
+    // API Modal settings
+    const apiSettingsBtn = document.getElementById('apiSettingsBtn');
+    const apiModal = document.getElementById('apiModal');
+    const apiEndpointInput = document.getElementById('apiEndpointInput');
+    const saveApiBtn = document.getElementById('saveApiBtn');
+    const apiSavedMsg = document.getElementById('apiSavedMsg');
 
-    // Local API & Cloud API endpoints
-    const API_URL = 'http://localhost:5000/api/transcribe';
+    // Dynamic Endpoint Resolution
+    function getApiUrl() {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('api')) return urlParams.get('api');
+      const saved = localStorage.getItem('custom_api_url');
+      if (saved) return saved;
+      return 'http://localhost:5000/api/transcribe';
+    }
+
+    apiEndpointInput.value = getApiUrl();
+
+    apiSettingsBtn.addEventListener('click', () => {
+      apiModal.style.display = apiModal.style.display === 'none' ? 'block' : 'none';
+    });
+
+    saveApiBtn.addEventListener('click', () => {
+      const val = apiEndpointInput.value.trim();
+      if (val) {
+        localStorage.setItem('custom_api_url', val);
+        apiSavedMsg.style.display = 'block';
+        setTimeout(() => apiSavedMsg.style.display = 'none', 3000);
+      }
+    });
 
     transmuteBtn.addEventListener('click', async () => {
       const url = instaUrl.value.trim();
@@ -366,6 +411,8 @@
         return;
       }
 
+      const activeApiUrl = getApiUrl();
+
       transmuteBtn.disabled = true;
       transmuteBtn.innerText = '⏳ Processing (1/3: Extracting MP3)...';
       outputSection.style.display = 'block';
@@ -373,7 +420,7 @@
       transcriptBox.innerText = 'Processing your Instagram Reel link...\nStep 1: Downloading media\nStep 2: Converting audio to 192kbps MP3\nStep 3: Transcribing long speech with OpenAI Whisper AI...';
 
       try {
-        const response = await fetch(API_URL, {
+        const response = await fetch(activeApiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: url })
@@ -389,15 +436,16 @@
         }
       } catch (err) {
         console.warn('API fetch warning:', err);
-        statusBadge.innerText = '💡 Processing via Local Transcriber Engine...';
+        statusBadge.innerText = '💡 Processing via Transcriber Engine...';
         
         // Detailed fallback information for user
         setTimeout(() => {
           transcriptBox.innerText = `[Pipeline Status]: Instagram Reel URL received!\n\n` +
-            `To transcribe long 3+ minute Instagram Reels dynamically on this site:\n` +
-            `1. Run the backend engine locally: python server.py\n` +
-            `2. Or run the CLI command: python cli.py "${url}"\n\n` +
-            `Whisper AI will process the complete MP3 audio track and extract every spoken word with timestamp alignment!`;
+            `Target API Endpoint: ${activeApiUrl}\n\n` +
+            `To transcribe Instagram Reels:\n` +
+            `1. Run local backend server: python server.py\n` +
+            `2. Or deploy backend to Render/Cloud Run (see DEPLOYMENT.md) and set API URL in top right ⚙️ API Engine Settings!\n` +
+            `3. Or run CLI command: python cli.py "${url}"`;
         }, 1200);
       } finally {
         transmuteBtn.disabled = false;
@@ -414,5 +462,6 @@
       });
     });
   </script>
+
 </body>
 </html>

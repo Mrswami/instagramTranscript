@@ -21,8 +21,12 @@ output/
 # Streamlit
 .streamlit/
 
+# Firebase
+.firebase/
+
 # OS / IDE
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+
