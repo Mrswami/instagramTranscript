@@ -358,9 +358,14 @@
     <div id="apiModal" style="display:none; background: rgba(15,23,42,0.95); border: 1px solid rgba(225,48,108,0.4); border-radius: 16px; padding: 20px; margin-bottom: 24px;">
       <h4 style="margin-bottom:8px; color:#f472b6;">⚙️ Python API Endpoint Configuration</h4>
       <p style="font-size:0.88rem; color:#94a3b8; margin-bottom:12px;">Configure your backend REST API endpoint URL (Local PC or Cloud Hosted on Render/Railway/Cloud Run):</p>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <input type="text" id="apiEndpointInput" class="input-field" style="padding:10px 14px; font-size:0.9rem;" placeholder="e.g. https://your-backend.onrender.com/api/transcribe or http://localhost:5000/api/transcribe" />
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+        <input type="text" id="apiEndpointInput" class="input-field" style="padding:10px 14px; font-size:0.9rem;" placeholder="e.g. https://instagramtranscript-backend.onrender.com/api/transcribe" />
         <button id="saveApiBtn" class="transmute-btn" style="padding:10px 20px; font-size:0.9rem; white-space:nowrap;">Save Engine URL</button>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <span style="font-size:0.8rem; color:#94a3b8;">Quick Presets:</span>
+        <button id="presetHttpsBtn" class="copy-btn" style="font-size:0.8rem; padding:4px 10px; background:rgba(225,48,108,0.2); border-color:rgba(225,48,108,0.5);">🔒 HTTPS Cloud API</button>
+        <button id="presetLocalBtn" class="copy-btn" style="font-size:0.8rem; padding:4px 10px;">💻 Local Host (http://localhost:5000)</button>
       </div>
       <span id="apiSavedMsg" style="display:none; color:#4ade80; font-size:0.85rem; margin-top:8px;">✅ Endpoint saved! Checking connection...</span>
     </div>
@@ -443,14 +448,31 @@
     const apiEndpointInput = document.getElementById('apiEndpointInput');
     const saveApiBtn = document.getElementById('saveApiBtn');
     const apiSavedMsg = document.getElementById('apiSavedMsg');
+    const presetHttpsBtn = document.getElementById('presetHttpsBtn');
+    const presetLocalBtn = document.getElementById('presetLocalBtn');
 
-    // Dynamic Endpoint Resolution
+    // Default HTTPS Cloud Endpoint matching site protocol
+    const CLOUD_HTTPS_ENDPOINT = 'https://instagramtranscript-backend.onrender.com/api/transcribe';
+    const LOCAL_HTTP_ENDPOINT = 'http://localhost:5000/api/transcribe';
+
+    // Dynamic Protocol-Matching Endpoint Resolution
     function getApiUrl() {
       const urlParams = new URLSearchParams(window.location.search);
       if (urlParams.get('api')) return urlParams.get('api');
       const saved = localStorage.getItem('custom_api_url');
       if (saved) return saved;
-      return 'http://localhost:5000/api/transcribe';
+
+      // If running on local computer, default to localhost HTTP
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return LOCAL_HTTP_ENDPOINT;
+      }
+
+      // If viewing web app over HTTPS, default to HTTPS Cloud API endpoint matching protocol
+      if (window.location.protocol === 'https:') {
+        return CLOUD_HTTPS_ENDPOINT;
+      }
+
+      return LOCAL_HTTP_ENDPOINT;
     }
 
     function getHealthUrl(transcribeUrl) {
@@ -479,7 +501,7 @@
         backendStatusPill.className = 'status-pill offline';
         statusDot.innerText = '🟡';
         statusText.innerText = window.location.protocol === 'https:' && apiUrl.startsWith('http://') ?
-          'Mixed Content Notice (Local HTTP API)' : 'Backend Standby / Local Server Needed';
+          'Mixed Content Notice (Use HTTPS Cloud API)' : 'Backend Standby / Local Server Needed';
       }
     }
 
@@ -490,14 +512,25 @@
       apiModal.style.display = apiModal.style.display === 'none' ? 'block' : 'none';
     });
 
+    function updateSavedEndpoint(newUrl) {
+      localStorage.setItem('custom_api_url', newUrl);
+      apiEndpointInput.value = newUrl;
+      apiSavedMsg.style.display = 'block';
+      checkBackendHealth();
+      setTimeout(() => apiSavedMsg.style.display = 'none', 3000);
+    }
+
     saveApiBtn.addEventListener('click', () => {
       const val = apiEndpointInput.value.trim();
-      if (val) {
-        localStorage.setItem('custom_api_url', val);
-        apiSavedMsg.style.display = 'block';
-        checkBackendHealth();
-        setTimeout(() => apiSavedMsg.style.display = 'none', 3000);
-      }
+      if (val) updateSavedEndpoint(val);
+    });
+
+    presetHttpsBtn.addEventListener('click', () => {
+      updateSavedEndpoint(CLOUD_HTTPS_ENDPOINT);
+    });
+
+    presetLocalBtn.addEventListener('click', () => {
+      updateSavedEndpoint(LOCAL_HTTP_ENDPOINT);
     });
 
     transmuteBtn.addEventListener('click', async () => {
@@ -558,16 +591,16 @@
         let helpNotice = '';
         if (window.location.protocol === 'https:' && activeApiUrl.startsWith('http://localhost')) {
           helpNotice = `⚠️ Mixed Content Protocol Notice:\n` +
-            `Your web browser is viewing this web app over HTTPS (https://instagramtranscript.web.app), while your API endpoint is pointing to local HTTP (${activeApiUrl}).\n\n` +
-            `To connect your local server to this web app:\n` +
-            `1. Start local backend: python server.py\n` +
-            `2. Click top right ⚙️ API Engine Settings and use a HTTPS endpoint (e.g. Render/Railway) OR allow insecure content in browser for localhost.\n` +
+            `Your web browser is viewing this web app over HTTPS (https://instagramtranscript.web.app), while your API endpoint is set to local HTTP (${activeApiUrl}).\n\n` +
+            `To fix this:\n` +
+            `1. Click top right ⚙️ API Engine Settings and select 🔒 HTTPS Cloud API (https://instagramtranscript-backend.onrender.com/api/transcribe).\n` +
+            `2. Or run local server: python server.py\n` +
             `3. Or run CLI directly in terminal: python cli.py "${url}"`;
         } else {
           helpNotice = `Unable to reach backend at ${activeApiUrl} (${err.message}).\n\n` +
             `Steps to resolve:\n` +
             `1. Run local backend server: python server.py\n` +
-            `2. Or set your Cloud API URL in top right ⚙️ API Engine Settings (see DEPLOYMENT.md)\n` +
+            `2. Or click top right ⚙️ API Engine Settings and set a live HTTPS Cloud API URL (see DEPLOYMENT.md)\n` +
             `3. Or transcribe via CLI: python cli.py "${url}" --model ${chosenModel}`;
         }
         transcriptBox.innerText = helpNotice;
@@ -576,6 +609,7 @@
         transmuteBtn.innerText = '✨ Transmute Link';
       }
     });
+
 
     copyBtn.addEventListener('click', () => {
       const text = transcriptBox.innerText;
