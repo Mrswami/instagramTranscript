@@ -5,12 +5,14 @@
 
 An end-to-end Python Media Pipeline, REST API, Streamlit Web Application, and CLI tool that extracts high-quality 192kbps MP3 audio from any Instagram Reel or Post link and distills it into copyable text transcripts, SRT subtitles, WebVTT captions, and structured JSON data using OpenAI's Whisper AI engine.
 
+![CI Pipeline](https://github.com/Mrswami/instagramTranscript/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-1.30+-ff4b4b?logo=streamlit&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.0+-000000?logo=flask&logoColor=white)
 ![Whisper](https://img.shields.io/badge/OpenAI-Whisper_AI-green?logo=openai&logoColor=white)
 ![Firebase](https://img.shields.io/badge/Firebase_Hosting-Live-ffca28?logo=firebase&logoColor=black)
 ![License](https://img.shields.io/badge/License-MIT-purple)
+
 
 ---
 
