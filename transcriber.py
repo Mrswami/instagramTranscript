@@ -375,8 +375,28 @@ class InstagramTranscriber:
         srt_content = self.export_srt(segments)
         vtt_content = self.export_vtt(segments)
 
+        video_id = self.extract_shortcode(url)
+        txt_path = self.output_dir / f"{video_id}.txt"
+        srt_path = self.output_dir / f"{video_id}.srt"
+        vtt_path = self.output_dir / f"{video_id}.vtt"
+
+        with open(txt_path, "w", encoding="utf-8") as f:
+            f.write(full_text)
+        with open(srt_path, "w", encoding="utf-8") as f:
+            f.write(srt_content)
+        with open(vtt_path, "w", encoding="utf-8") as f:
+            f.write(vtt_content)
+
         return {
+            "video_id": video_id,
+            "mp3_filename": audio_path.name,
+            "txt_filename": txt_path.name,
+            "srt_filename": srt_path.name,
+            "vtt_filename": vtt_path.name,
             "audio_file": str(audio_path),
+            "txt_file": str(txt_path),
+            "srt_file": str(srt_path),
+            "vtt_file": str(vtt_path),
             "text": full_text,
             "segments": [
                 {

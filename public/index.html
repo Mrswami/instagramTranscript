@@ -395,10 +395,16 @@
 
       <!-- Output Container -->
       <div id="outputSection" class="output-section">
-        <div class="output-header">
-          <span style="font-weight:700; color:#f472b6;">📄 Generated Full Transcript</span>
-          <button id="copyBtn" class="copy-btn">📋 Copy Transcript</button>
+        <div class="output-header" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <span style="font-weight:700; color:#f472b6;">📄 Transmuted MP3 & Transcript</span>
+          <div style="margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap;">
+            <a id="downloadMp3Btn" class="github-btn" style="display:none;" target="_blank" download>🎵 Download MP3</a>
+            <a id="downloadTxtBtn" class="github-btn" style="display:none;" target="_blank" download>📄 Download TXT</a>
+            <a id="downloadSrtBtn" class="github-btn" style="display:none;" target="_blank" download>🎬 Download SRT</a>
+            <button id="copyBtn" class="copy-btn">📋 Copy Transcript</button>
+          </div>
         </div>
+        <audio id="audioPreview" controls style="display:none; width:100%; margin: 16px 0; border-radius: 8px;"></audio>
         <div id="transcriptBox" class="transcript-box"></div>
       </div>
     </main>
@@ -435,6 +441,10 @@
     const outputSection = document.getElementById('outputSection');
     const transcriptBox = document.getElementById('transcriptBox');
     const copyBtn = document.getElementById('copyBtn');
+    const downloadMp3Btn = document.getElementById('downloadMp3Btn');
+    const downloadTxtBtn = document.getElementById('downloadTxtBtn');
+    const downloadSrtBtn = document.getElementById('downloadSrtBtn');
+    const audioPreview = document.getElementById('audioPreview');
     const statusBadge = document.getElementById('statusBadge');
     
     // Status Pill Elements
@@ -576,8 +586,42 @@
 
         if (response.ok) {
           const data = await response.json();
-          statusBadge.innerText = '✅ Transcription complete!';
+          statusBadge.innerText = '✅ Media transmuted & transcribed successfully!';
           transcriptBox.innerText = data.text || 'No spoken speech detected in audio track.';
+
+          // Set up MP3 download link & preview player
+          if (data.mp3_url) {
+            downloadMp3Btn.href = data.mp3_url;
+            downloadMp3Btn.style.display = 'inline-flex';
+            audioPreview.src = data.mp3_url + '?download=false';
+            audioPreview.style.display = 'block';
+          } else {
+            downloadMp3Btn.style.display = 'none';
+            audioPreview.style.display = 'none';
+          }
+
+          // Set up TXT download link
+          if (data.txt_url) {
+            downloadTxtBtn.href = data.txt_url;
+            downloadTxtBtn.style.display = 'inline-flex';
+          } else if (data.text) {
+            // Fallback blob download
+            const txtBlob = new Blob([data.text], { type: 'text/plain;charset=utf-8' });
+            downloadTxtBtn.href = URL.createObjectURL(txtBlob);
+            downloadTxtBtn.download = `${data.video_id || 'transcript'}.txt`;
+            downloadTxtBtn.style.display = 'inline-flex';
+          }
+
+          // Set up SRT download link
+          if (data.srt_url) {
+            downloadSrtBtn.href = data.srt_url;
+            downloadSrtBtn.style.display = 'inline-flex';
+          } else if (data.srt) {
+            const srtBlob = new Blob([data.srt], { type: 'text/plain;charset=utf-8' });
+            downloadSrtBtn.href = URL.createObjectURL(srtBlob);
+            downloadSrtBtn.download = `${data.video_id || 'captions'}.srt`;
+            downloadSrtBtn.style.display = 'inline-flex';
+          }
         } else {
           const errData = await response.json().catch(() => ({}));
           throw new Error(errData.error || `Server HTTP Error ${response.status}`);
