@@ -23,12 +23,26 @@ import requests
 # Dynamically locate FFmpeg binary via imageio_ffmpeg if available
 try:
     import imageio_ffmpeg
+    import shutil
     ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
     ffmpeg_dir = os.path.dirname(ffmpeg_exe)
+
+    # Whisper expects 'ffmpeg.exe' in PATH on Windows.
+    # imageio_ffmpeg names binary e.g. 'ffmpeg-win64-v4.2.2.exe'.
+    # Copy to 'ffmpeg.exe' inside ffmpeg_dir if missing.
+    target_ffmpeg_exe = os.path.join(ffmpeg_dir, "ffmpeg.exe")
+    if not os.path.exists(target_ffmpeg_exe):
+        try:
+            shutil.copyfile(ffmpeg_exe, target_ffmpeg_exe)
+        except Exception as copy_err:
+            print(f"[FFmpeg Setup] Warning creating ffmpeg.exe: {copy_err}")
+
     if ffmpeg_dir not in os.environ.get("PATH", ""):
         os.environ["PATH"] = ffmpeg_dir + os.path.pathsep + os.environ.get("PATH", "")
-except Exception:
+except Exception as e:
     ffmpeg_exe = "ffmpeg"
+    ffmpeg_dir = None
+
 
 
 class InstagramTranscriber:
@@ -66,7 +80,7 @@ class InstagramTranscriber:
         """
         if model_name not in self._model_cache:
             import whisper
-            print(f"⚡ Pre-loading & caching Whisper model '{model_name}' into memory...")
+            print(f"[Whisper AI] Pre-loading & caching Whisper model '{model_name}' into memory...")
             self._model_cache[model_name] = whisper.load_model(model_name)
         return self._model_cache[model_name]
 
@@ -79,14 +93,15 @@ class InstagramTranscriber:
         """
         try:
             self.get_whisper_model(model_name)
-            print(f"✅ Whisper model '{model_name}' pre-loaded successfully.")
+            print(f"[Whisper AI] Whisper model '{model_name}' pre-loaded successfully.")
         except Exception as e:
-            print(f"⚠️ Warning: Pre-loading Whisper model '{model_name}' failed: {e}")
+            print(f"[Whisper AI] Warning: Pre-loading Whisper model '{model_name}' failed: {e}")
+
 
     @staticmethod
     def validate_url(url: str) -> bool:
         """
-        Verify whether an input string is a valid Instagram Reel or Post link.
+        Verify whether an input string is a valid Instagram Reel, Post, or TV link.
 
         Args:
             url (str): The URL string to evaluate.
@@ -94,7 +109,7 @@ class InstagramTranscriber:
         Returns:
             bool: True if URL matches Instagram reel/post format, False otherwise.
         """
-        pattern = r"https?://(www\.)?instagram\.com/(reel|p|reels)/[A-Za-z0-9_-]+/?.*"
+        pattern = r"https?://(www\.)?(instagram\.com|instagr\.am)/(reel|p|reels|tv|share)/[A-Za-z0-9_-]+/?.*"
         return bool(re.match(pattern, url.strip()))
 
     @staticmethod
@@ -106,10 +121,11 @@ class InstagramTranscriber:
             url (str): Instagram post/reel URL.
 
         Returns:
-            str: 11-character shortcode ID, or 'reel' as a default fallback.
+            str: Shortcode ID, or 'reel' as a default fallback.
         """
-        match = re.search(r"/(reel|p|reels)/([A-Za-z0-9_-]+)", url)
+        match = re.search(r"/(reel|p|reels|tv|share)/([A-Za-z0-9_-]+)", url)
         return match.group(2) if match else "reel"
+
 
     def convert_video_to_mp3(self, video_path: Path, output_mp3: Path) -> Path:
         """
@@ -165,7 +181,7 @@ class InstagramTranscriber:
 
     def download_audio_ytdlp(self, url: str) -> Path:
         """
-        Download media stream using yt-dlp with optional cookie authentication.
+        Download media stream using yt-dlp and convert to MP3 locally using FFmpeg.
 
         Args:
             url (str): Target Instagram post or reel link.
@@ -174,21 +190,24 @@ class InstagramTranscriber:
             Path: Path to output MP3 file.
 
         Raises:
-            FileNotFoundError: If yt-dlp fails to save the MP3 audio file.
+            FileNotFoundError: If yt-dlp fails to download media stream.
         """
         import yt_dlp
         video_id = self.extract_shortcode(url)
         temp_dir = Path(tempfile.gettempdir()) / "insta_transcribe"
         temp_dir.mkdir(parents=True, exist_ok=True)
+
+        # Clear any stale temporary files for this video ID
+        for old_file in temp_dir.glob(f"{video_id}.*"):
+            try:
+                old_file.unlink()
+            except Exception:
+                pass
+
         out_template = str(temp_dir / f"{video_id}.%(ext)s")
 
         ydl_opts = {
-            'format': 'bestaudio/best',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': '192',
-            }],
+            'format': 'bestaudio/best/bestvideo+bestaudio',
             'outtmpl': out_template,
             'quiet': True,
             'no_warnings': True,
@@ -198,24 +217,26 @@ class InstagramTranscriber:
             }
         }
 
+        if ffmpeg_dir:
+            ydl_opts['ffmpeg_location'] = ffmpeg_dir
+
         if self.cookies_file.exists():
             ydl_opts['cookiefile'] = str(self.cookies_file)
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.extract_info(url, download=True)
 
-        mp3_file = temp_dir / f"{video_id}.mp3"
-        if not mp3_file.exists():
-            candidates = list(temp_dir.glob(f"{video_id}*.mp3"))
-            if candidates:
-                mp3_file = candidates[0]
-            else:
-                raise FileNotFoundError("yt-dlp failed to produce MP3 file.")
+        # Locate downloaded media file (.mp4, .m4a, .webm, etc.)
+        candidates = list(temp_dir.glob(f"{video_id}.*"))
+        if not candidates:
+            raise FileNotFoundError("yt-dlp failed to download media stream.")
 
+        source_media = candidates[0]
         dest_mp3 = self.output_dir / f"{video_id}.mp3"
-        with open(mp3_file, 'rb') as sf, open(dest_mp3, 'wb') as df:
-            df.write(sf.read())
-        return dest_mp3
+
+        print(f"[Media Extractor] Local media downloaded ({source_media.name}). Converting to MP3 audio...")
+        return self.convert_video_to_mp3(source_media, dest_mp3)
+
 
     def download_audio(self, url: str) -> Path:
         """
@@ -239,7 +260,7 @@ class InstagramTranscriber:
         try:
             return self.download_audio_ytdlp(url)
         except Exception as e1:
-            print(f"yt-dlp attempt failed: {e1}. Trying direct API extraction...")
+            print(f"[Media Extractor] yt-dlp attempt failed: {e1}. Trying direct API extraction...")
 
         # Attempt 2: Public Instagram Downloader API fallback
         try:
@@ -252,7 +273,7 @@ class InstagramTranscriber:
                     video_id = self.extract_shortcode(url)
                     return self.download_direct_url(video_url, video_id)
         except Exception as e2:
-            print(f"API attempt failed: {e2}")
+            print(f"[Media Extractor] API attempt failed: {e2}")
 
         raise RuntimeError(
             "Could not download Instagram Reel. If this post is private or rate-limited, "
@@ -271,7 +292,7 @@ class InstagramTranscriber:
             dict: Raw Whisper dictionary containing 'text', 'segments', and language metadata.
         """
         model = self.get_whisper_model(model_name)
-        print(f"Transcribing audio file: {audio_path.name} with Whisper '{model_name}' model...")
+        print(f"[Whisper AI] Transcribing audio file: {audio_path.name} with '{model_name}' model...")
         result = model.transcribe(str(audio_path), fp16=False)
         return result
 

@@ -36,17 +36,17 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    print(f"🚀 Processing Instagram URL: {args.url}")
+    print(f"[CLI] Processing Instagram URL: {args.url}")
     transcriber = InstagramTranscriber(output_dir=args.outdir)
 
     try:
         result = transcriber.process_url(args.url, model_name=args.model)
 
         print("\n" + "=" * 50)
-        print("🎉 TRANSCRIPTION COMPLETE")
+        print("=== TRANSCRIPTION COMPLETE ===")
         print("=" * 50)
-        print(f"🎵 Audio Saved: {result['audio_file']}")
-        print("\n📝 TRANSCRIPT:")
+        print(f"Audio Saved: {result['audio_file']}")
+        print("\nTRANSCRIPT:")
         print(result['text'])
         print("=" * 50)
 
@@ -56,11 +56,12 @@ def main() -> None:
         (out_path / "transcript.vtt").write_text(result['vtt'], encoding="utf-8")
         (out_path / "transcript.json").write_text(result['json'], encoding="utf-8")
 
-        print(f"✅ Saved transcript files (.txt, .srt, .vtt, .json) to folder: {out_path.resolve()}")
+        print(f"[CLI] Saved transcript files (.txt, .srt, .vtt, .json) to folder: {out_path.resolve()}")
 
     except Exception as e:
-        print(f"❌ Error: {e}", file=sys.stderr)
+        print(f"[CLI Error] Error: {e}", file=sys.stderr)
         sys.exit(1)
+
 
 
 if __name__ == "__main__":

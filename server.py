@@ -71,7 +71,7 @@ def transcribe_endpoint():
         return jsonify({"error": "Invalid Instagram URL format"}), 400
 
     try:
-        print(f"🚀 Processing request for URL: {url} (Model: {model_name})")
+        print(f"[API Engine] Processing request for URL: {url} (Model: {model_name})")
         result = transcriber.process_url(url, model_name=model_name)
         return jsonify({
             "status": "success",
@@ -82,14 +82,15 @@ def transcribe_endpoint():
             "audio_file": result['audio_file']
         })
     except Exception as e:
-        print(f"❌ Error processing URL {url}: {str(e)}")
+        print(f"[API Engine Error] Error processing URL {url}: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    print(f"✨ Instagramtranscript REST API server running on http://0.0.0.0:{port}...")
+    print(f"[API Engine] Instagramtranscript REST API server running on http://0.0.0.0:{port}...")
     app.run(host='0.0.0.0', port=port, debug=False)
+
 
 
 
