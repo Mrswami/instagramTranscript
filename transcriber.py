@@ -38,6 +38,7 @@ class InstagramTranscriber:
     Attributes:
         output_dir (Path): Directory where output MP3 files and transcripts are saved.
         cookies_file (Path): Path to optional Instagram cookies text file for auth-gated posts.
+        _model_cache (dict): In-memory cache store for loaded PyTorch Whisper model objects.
     """
 
     def __init__(self, output_dir: str = "output", cookies_file: str = "cookies.txt") -> None:
@@ -51,6 +52,36 @@ class InstagramTranscriber:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.cookies_file = Path(cookies_file)
+        self._model_cache: Dict[str, Any] = {}
+
+    def get_whisper_model(self, model_name: str = "base") -> Any:
+        """
+        Retrieve a loaded Whisper model instance from cache or load it into memory.
+
+        Args:
+            model_name (str): Model size identifier ('tiny', 'base', 'small', 'medium').
+
+        Returns:
+            Any: Loaded Whisper model object ready for transcription.
+        """
+        if model_name not in self._model_cache:
+            import whisper
+            print(f"⚡ Pre-loading & caching Whisper model '{model_name}' into memory...")
+            self._model_cache[model_name] = whisper.load_model(model_name)
+        return self._model_cache[model_name]
+
+    def preload_model(self, model_name: str = "base") -> None:
+        """
+        Pre-load a Whisper model on startup to eliminate cold-start latency for first requests.
+
+        Args:
+            model_name (str): Model size identifier to pre-load.
+        """
+        try:
+            self.get_whisper_model(model_name)
+            print(f"✅ Whisper model '{model_name}' pre-loaded successfully.")
+        except Exception as e:
+            print(f"⚠️ Warning: Pre-loading Whisper model '{model_name}' failed: {e}")
 
     @staticmethod
     def validate_url(url: str) -> bool:
@@ -161,6 +192,7 @@ class InstagramTranscriber:
             'outtmpl': out_template,
             'quiet': True,
             'no_warnings': True,
+            'socket_timeout': 30,
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
             }
@@ -229,7 +261,7 @@ class InstagramTranscriber:
 
     def transcribe(self, audio_path: Path, model_name: str = "base") -> Dict[str, Any]:
         """
-        Transcribe an MP3 file using OpenAI's Whisper AI models.
+        Transcribe an MP3 file using OpenAI's Whisper AI models (reuses cached model instances).
 
         Args:
             audio_path (Path): Path to local MP3 audio file.
@@ -238,12 +270,11 @@ class InstagramTranscriber:
         Returns:
             dict: Raw Whisper dictionary containing 'text', 'segments', and language metadata.
         """
-        import whisper
-        print(f"Loading Whisper model '{model_name}'...")
-        model = whisper.load_model(model_name)
-        print(f"Transcribing audio file: {audio_path.name}...")
+        model = self.get_whisper_model(model_name)
+        print(f"Transcribing audio file: {audio_path.name} with Whisper '{model_name}' model...")
         result = model.transcribe(str(audio_path), fp16=False)
         return result
+
 
     @staticmethod
     def format_timestamp(seconds: float) -> str:

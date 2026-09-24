@@ -170,9 +170,10 @@ python cli.py "https://www.instagram.com/reel/Cxxxxxx/" --model base --outdir ou
 ```
 instagramTranscript/
 ├── app.py              # Streamlit Web App interface with glassmorphism design
-├── server.py           # Flask REST API backend server
+├── server.py           # Flask REST API backend server with pre-loading & CORS
 ├── cli.py              # Command-line interface tool
 ├── transcriber.py      # Core media downloader, FFmpeg transcoder & Whisper AI pipeline
+├── ISSUES.md           # QA testing report, latency performance benchmarks & resolved issues
 ├── DEPLOYMENT.md       # Cloud deployment instructions (Render, Railway, Google Cloud Run)
 ├── Dockerfile          # Container specification for cloud hosting
 ├── firebase.json       # Firebase Hosting configuration
@@ -180,9 +181,10 @@ instagramTranscript/
 ├── render.yaml         # Render cloud service deployment configuration
 ├── requirements.txt    # Python dependency manifest
 ├── public/             # Static web assets for live Web App
-│   ├── index.html      # Responsive glassmorphism web client
+│   ├── index.html      # Responsive glassmorphism web client with health indicator
 │   └── logo.jpg        # Brand logo asset
 └── output/             # Output folder for generated MP3s and transcripts
+
 ```
 
 ---
