@@ -102,44 +102,35 @@ class InstagramTranscriber:
     def validate_url(url: str) -> bool:
         """
         Verify whether an input string is a valid Instagram Reel, Post, or TV link.
-
-        Args:
-            url (str): The URL string to evaluate.
-
-        Returns:
-            bool: True if URL matches Instagram reel/post format, False otherwise.
         """
-        pattern = r"https?://(www\.)?(instagram\.com|instagr\.am)/(reel|p|reels|tv|share)/[A-Za-z0-9_-]+/?.*"
-        return bool(re.match(pattern, url.strip()))
+        pattern = r"https?://(www\.)?(instagram\.com|instagr\.am|ddinstagram\.com|fxtagram\.com)/(?:[^/]+/)*(reel|p|reels|tv|share)/[A-Za-z0-9_-]+"
+        return bool(re.search(pattern, url.strip()))
 
     @staticmethod
     def extract_shortcode(url: str) -> str:
         """
-        Extract the Instagram post/reel shortcode identifier from a URL.
-
-        Args:
-            url (str): Instagram post/reel URL.
-
-        Returns:
-            str: Shortcode ID, or 'reel' as a default fallback.
+        Extract the Instagram post/reel shortcode identifier accurately from any URL format.
         """
-        match = re.search(r"/(reel|p|reels|tv|share)/([A-Za-z0-9_-]+)", url)
-        return match.group(2) if match else "reel"
+        clean_url = url.strip().split('?')[0].rstrip('/')
+        parts = [p for p in clean_url.split('/') if p]
+
+        for i, p in enumerate(parts):
+            if p in ('reel', 'p', 'reels', 'tv'):
+                if i + 1 < len(parts) and parts[i + 1] not in ('share', 'reels'):
+                    return parts[i + 1]
+            if p == 'share':
+                if i + 2 < len(parts) and parts[i + 1] in ('p', 'reel', 'reels', 'tv'):
+                    return parts[i + 2]
+                elif i + 1 < len(parts):
+                    return parts[i + 1]
+
+        match = re.search(r"/(?:reel|p|reels|tv|share)/(?:p/|reel/)?([A-Za-z0-9_-]+)", url)
+        return match.group(1) if match else "reel"
 
 
     def convert_video_to_mp3(self, video_path: Path, output_mp3: Path) -> Path:
         """
         Convert any source video/audio file into a standardized 192kbps MP3 file using FFmpeg.
-
-        Args:
-            video_path (Path): Path to source video file (e.g. .mp4).
-            output_mp3 (Path): Destination path for generated .mp3 file.
-
-        Returns:
-            Path: Path to the resulting MP3 audio file.
-
-        Raises:
-            RuntimeError: If FFmpeg fails or output file is not generated.
         """
         cmd = [
             ffmpeg_exe, "-y",
@@ -158,19 +149,12 @@ class InstagramTranscriber:
     def download_direct_url(self, media_url: str, video_id: str) -> Path:
         """
         Download media stream directly from an HTTP URL and encode to MP3.
-
-        Args:
-            media_url (str): Direct HTTP link to media stream.
-            video_id (str): Unique video shortcode identifier.
-
-        Returns:
-            Path: Path to created MP3 file in output directory.
         """
         temp_dir = Path(tempfile.gettempdir()) / "insta_transcribe"
         temp_dir.mkdir(parents=True, exist_ok=True)
         temp_video = temp_dir / f"{video_id}.mp4"
 
-        r = requests.get(media_url, stream=True, headers={'User-Agent': 'Mozilla/5.0'}, timeout=60)
+        r = requests.get(media_url, stream=True, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}, timeout=60)
         with open(temp_video, 'wb') as f:
             for chunk in r.iter_content(chunk_size=8192):
                 if chunk:
@@ -182,22 +166,12 @@ class InstagramTranscriber:
     def download_audio_ytdlp(self, url: str) -> Path:
         """
         Download media stream using yt-dlp and convert to MP3 locally using FFmpeg.
-
-        Args:
-            url (str): Target Instagram post or reel link.
-
-        Returns:
-            Path: Path to output MP3 file.
-
-        Raises:
-            FileNotFoundError: If yt-dlp fails to download media stream.
         """
         import yt_dlp
         video_id = self.extract_shortcode(url)
         temp_dir = Path(tempfile.gettempdir()) / "insta_transcribe"
         temp_dir.mkdir(parents=True, exist_ok=True)
 
-        # Clear any stale temporary files for this video ID
         for old_file in temp_dir.glob(f"{video_id}.*"):
             try:
                 old_file.unlink()
@@ -214,6 +188,7 @@ class InstagramTranscriber:
             'socket_timeout': 30,
             'http_headers': {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
             }
         }
 
@@ -226,7 +201,6 @@ class InstagramTranscriber:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.extract_info(url, download=True)
 
-        # Locate downloaded media file (.mp4, .m4a, .webm, etc.)
         candidates = list(temp_dir.glob(f"{video_id}.*"))
         if not candidates:
             raise FileNotFoundError("yt-dlp failed to download media stream.")
@@ -244,25 +218,52 @@ class InstagramTranscriber:
 
         Sequence:
         1. Attempt `yt-dlp` audio extraction.
-        2. Attempt public downloader API extraction.
-        3. Raise exception prompting cookie file configuration if all fail.
-
-        Args:
-            url (str): Instagram Reel or Post link.
-
-        Returns:
-            Path: Path to final converted MP3 file.
+        2. Attempt DDInstagram OpenGraph video stream extraction.
+        3. Attempt Instagram Embed HTML extraction.
+        4. Attempt Public Instagram Downloader API extraction.
         """
         if not self.validate_url(url):
             raise ValueError("Invalid Instagram URL. Please enter a valid Reel or Post link.")
 
-        # Attempt 1: yt-dlp engine
-        try:
-            return self.download_audio_ytdlp(url)
-        except Exception as e1:
-            print(f"[Media Extractor] yt-dlp attempt failed: {e1}. Trying direct API extraction...")
+        shortcode = self.extract_shortcode(url)
+        normalized_url = f"https://www.instagram.com/reel/{shortcode}/" if shortcode and shortcode != "reel" else url
 
-        # Attempt 2: Public Instagram Downloader API fallback
+        # Attempt 1: yt-dlp engine with normalized URL
+        try:
+            return self.download_audio_ytdlp(normalized_url)
+        except Exception as e1:
+            print(f"[Media Extractor] yt-dlp attempt failed: {e1}. Trying DDInstagram open-graph fallback...")
+
+        # Attempt 2: DDInstagram OpenGraph Mirror Extractor
+        try:
+            dd_url = f"https://ddinstagram.com/reel/{shortcode}"
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+            r = requests.get(dd_url, headers=headers, timeout=12)
+            if r.status_code == 200:
+                video_match = re.search(r'<meta\s+property=["\']og:video["\']\s+content=["\']([^"\']+)["\']', r.text)
+                if not video_match:
+                    video_match = re.search(r'<meta\s+property=["\']og:video:secure_url["\']\s+content=["\']([^"\']+)["\']', r.text)
+                if video_match:
+                    media_url = video_match.group(1).replace("&amp;", "&")
+                    print(f"[Media Extractor] DDInstagram mirror video stream found. Downloading direct MP4...")
+                    return self.download_direct_url(media_url, shortcode)
+        except Exception as e2:
+            print(f"[Media Extractor] DDInstagram fallback failed: {e2}")
+
+        # Attempt 3: Instagram Embed Scraper
+        try:
+            embed_url = f"https://www.instagram.com/p/{shortcode}/embed/captioned/"
+            r = requests.get(embed_url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+            if r.status_code == 200:
+                matches = re.findall(r'video_url["\']\s*:\s*["\']([^"\']+)["\']', r.text)
+                if matches:
+                    media_url = matches[0].replace('\\u0026', '&').replace('\\/', '/')
+                    print(f"[Media Extractor] Instagram embed stream found. Downloading direct MP4...")
+                    return self.download_direct_url(media_url, shortcode)
+        except Exception as e3:
+            print(f"[Media Extractor] Embed scraper failed: {e3}")
+
+        # Attempt 4: Public Downloader API fallback
         try:
             api_endpoint = f"https://api.vkrdown.com/v4/insta.php?url={url}"
             r = requests.get(api_endpoint, headers={'User-Agent': 'Mozilla/5.0'}, timeout=15)
@@ -270,27 +271,52 @@ class InstagramTranscriber:
                 data = r.json()
                 video_url = data.get('data', {}).get('video_url') or data.get('download_url')
                 if video_url:
-                    video_id = self.extract_shortcode(url)
-                    return self.download_direct_url(video_url, video_id)
-        except Exception as e2:
-            print(f"[Media Extractor] API attempt failed: {e2}")
+                    return self.download_direct_url(video_url, shortcode)
+        except Exception as e4:
+            print(f"[Media Extractor] API attempt failed: {e4}")
 
         raise RuntimeError(
-            "Could not download Instagram Reel. If this post is private or rate-limited, "
-            "please place a valid 'cookies.txt' file in the project folder."
+            f"Could not download Instagram Reel ({shortcode}). "
+            "If this Reel is private or rate-limited by Instagram, please use the Direct File Upload feature in the Web App to process the video directly!"
         )
 
-    def transcribe(self, audio_path: Path, model_name: str = "base") -> Dict[str, Any]:
+    def transcribe(self, audio_path: Path, model_name: str = "base", openai_api_key: Optional[str] = None) -> Dict[str, Any]:
         """
-        Transcribe an MP3 file using OpenAI's Whisper AI models (reuses cached model instances).
-
-        Args:
-            audio_path (Path): Path to local MP3 audio file.
-            model_name (str): Whisper model model size ('tiny', 'base', 'small', 'medium').
-
-        Returns:
-            dict: Raw Whisper dictionary containing 'text', 'segments', and language metadata.
+        Transcribe an MP3 file using OpenAI's cloud API, OpenRouter API, or local PyTorch Whisper models.
         """
+        api_key = (openai_api_key or os.environ.get("OPENAI_API_KEY") or "").strip()
+        if api_key:
+            try:
+                from openai import OpenAI
+                if api_key.startswith("sk-or-"):
+                    print(f"[Whisper Cloud API] Using OpenRouter API (openai/whisper-1)...")
+                    client = OpenAI(api_key=api_key, base_url="https://openrouter.ai/api/v1")
+                    target_model = "openai/whisper-1"
+                else:
+                    print(f"[Whisper Cloud API] Using OpenAI API (whisper-1)...")
+                    client = OpenAI(api_key=api_key)
+                    target_model = "whisper-1"
+
+                with open(audio_path, "rb") as f:
+                    res = client.audio.transcriptions.create(
+                        model=target_model,
+                        file=f,
+                        response_format="verbose_json"
+                    )
+                text = getattr(res, 'text', '') if not isinstance(res, dict) else res.get('text', '')
+                segments_raw = getattr(res, 'segments', []) if not isinstance(res, dict) else res.get('segments', [])
+                segments = []
+                for s in segments_raw:
+                    s_dict = s if isinstance(s, dict) else (getattr(s, '__dict__', {}) if hasattr(s, '__dict__') else s)
+                    segments.append({
+                        "start": s_dict.get('start', 0.0) if isinstance(s_dict, dict) else getattr(s, 'start', 0.0),
+                        "end": s_dict.get('end', 0.0) if isinstance(s_dict, dict) else getattr(s, 'end', 0.0),
+                        "text": (s_dict.get('text', '') if isinstance(s_dict, dict) else getattr(s, 'text', '')).strip()
+                    })
+                return {"text": text, "segments": segments}
+            except Exception as api_err:
+                print(f"[Whisper Cloud API] Cloud API call failed ({api_err}). Falling back to local PyTorch Whisper...")
+
         model = self.get_whisper_model(model_name)
         print(f"[Whisper AI] Transcribing audio file: {audio_path.name} with '{model_name}' model...")
         result = model.transcribe(str(audio_path), fp16=False)
@@ -299,15 +325,6 @@ class InstagramTranscriber:
 
     @staticmethod
     def format_timestamp(seconds: float) -> str:
-        """
-        Format floating seconds into HH:MM:SS,mmm timestamp string.
-
-        Args:
-            seconds (float): Duration in seconds.
-
-        Returns:
-            str: Formatted timestamp string (e.g., '00:01:23,456').
-        """
         hrs = int(seconds // 3600)
         mins = int((seconds % 3600) // 60)
         secs = int(seconds % 60)
@@ -315,15 +332,6 @@ class InstagramTranscriber:
         return f"{hrs:02d}:{mins:02d}:{secs:02d},{milli:03d}"
 
     def export_srt(self, segments: List[Dict[str, Any]]) -> str:
-        """
-        Generate SubRip (.srt) caption formatted string from Whisper segments.
-
-        Args:
-            segments (list): Segment list output from Whisper model.
-
-        Returns:
-            str: Formatted SRT content.
-        """
         lines = []
         for idx, seg in enumerate(segments, 1):
             start = self.format_timestamp(seg['start'])
@@ -333,15 +341,6 @@ class InstagramTranscriber:
         return "\n".join(lines)
 
     def export_vtt(self, segments: List[Dict[str, Any]]) -> str:
-        """
-        Generate WebVTT (.vtt) caption formatted string from Whisper segments.
-
-        Args:
-            segments (list): Segment list output from Whisper model.
-
-        Returns:
-            str: Formatted WebVTT content.
-        """
         lines = ["WEBVTT\n"]
         for seg in segments:
             start = self.format_timestamp(seg['start']).replace(',', '.')
@@ -350,24 +349,20 @@ class InstagramTranscriber:
             lines.append(f"{start} --> {end}\n{text}\n")
         return "\n".join(lines)
 
-    def process_url(self, url: str, model_name: str = "base") -> Dict[str, Any]:
-        """
-        Execute full end-to-end processing pipeline for an Instagram URL.
-
-        Pipeline Steps:
-        1. Download & convert media to 192kbps MP3.
-        2. Run OpenAI Whisper AI speech recognition engine.
-        3. Format outputs into raw text, timestamped segments, SRT, VTT, and JSON.
-
-        Args:
-            url (str): Target Instagram URL.
-            model_name (str): Whisper AI model size ('tiny', 'base', 'small', 'medium').
-
-        Returns:
-            dict: Structured dictionary containing all output formats and file paths.
-        """
+    def process_url(self, url: str, model_name: str = "base", openai_api_key: Optional[str] = None) -> Dict[str, Any]:
         audio_path = self.download_audio(url)
-        transcribe_res = self.transcribe(audio_path, model_name=model_name)
+        video_id = self.extract_shortcode(url)
+        return self._build_result_package(video_id, audio_path, model_name, openai_api_key)
+
+    def process_file(self, file_path: Path, model_name: str = "base", openai_api_key: Optional[str] = None) -> Dict[str, Any]:
+        video_id = file_path.stem
+        dest_mp3 = self.output_dir / f"{video_id}.mp3"
+        print(f"[Media Extractor] Processing direct uploaded file ({file_path.name}). Converting to MP3...")
+        audio_path = self.convert_video_to_mp3(file_path, dest_mp3)
+        return self._build_result_package(video_id, audio_path, model_name, openai_api_key)
+
+    def _build_result_package(self, video_id: str, audio_path: Path, model_name: str, openai_api_key: Optional[str]) -> Dict[str, Any]:
+        transcribe_res = self.transcribe(audio_path, model_name=model_name, openai_api_key=openai_api_key)
 
         full_text = transcribe_res.get('text', '').strip()
         segments = transcribe_res.get('segments', [])
@@ -375,7 +370,6 @@ class InstagramTranscriber:
         srt_content = self.export_srt(segments)
         vtt_content = self.export_vtt(segments)
 
-        video_id = self.extract_shortcode(url)
         txt_path = self.output_dir / f"{video_id}.txt"
         srt_path = self.output_dir / f"{video_id}.srt"
         vtt_path = self.output_dir / f"{video_id}.vtt"

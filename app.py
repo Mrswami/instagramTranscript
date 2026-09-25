@@ -144,20 +144,25 @@ model_choice = st.sidebar.selectbox(
     help="Tiny is fastest; Base is recommended for general use; Small/Medium offer higher accuracy."
 )
 
+openai_api_key_input = st.sidebar.text_input(
+    "🔑 OpenAI API Key (Optional):",
+    type="password",
+    help="Provide an OpenAI API Key for 2-second cloud transcription using whisper-1 API!"
+)
+
 st.sidebar.markdown("---")
 st.sidebar.markdown("""
 ### 💡 How to use:
-1. Copy any Instagram Reel or Post link.
-2. Paste link in the input box.
-3. Click **Transmute to Transcript**.
-4. Listen to preview MP3 & click **Copy Transcript**.
-5. Download TXT, SRT, VTT, or JSON subtitle files.
+1. **Instagram URL**: Paste any Reel/Post link to extract & transcribe.
+2. **Direct File Upload**: Upload `.mp4`, `.mov`, `.m4a`, or `.mp3` files directly if a Reel is private or rate-limited!
+3. Click **Transmute** to preview MP3 & download captions.
 """)
 
-# Main Input Section
-with st.container():
+# Main Input Section with Tabs
+tab_url, tab_upload = st.tabs(["🔗 Transmute Instagram Link", "📁 Direct Video/Audio Upload Workaround"])
+
+with tab_url:
     st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    
     col1, col2 = st.columns([3, 1])
     with col1:
         insta_url = st.text_input(
@@ -167,30 +172,63 @@ with st.container():
         )
     with col2:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-        transmute_btn = st.button("✨ Transmute Link")
-        
+        transmute_url_btn = st.button("✨ Transmute Link", key="btn_url")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Process Trigger
-if transmute_btn:
+with tab_upload:
+    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
+    uploaded_file = st.file_uploader(
+        "Upload Video or Audio File (.mp4, .mov, .m4a, .mp3, .wav):",
+        type=["mp4", "mov", "m4a", "mp3", "wav", "webm"],
+        help="Upload downloaded Instagram reel video directly to bypass cloud scrapers or rate limits."
+    )
+    transmute_file_btn = st.button("⚡ Transmute Uploaded File", key="btn_file")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# URL Trigger Process
+if 'transmute_url_btn' in locals() and transmute_url_btn:
     if not insta_url.strip():
         st.error("⚠️ Please enter a valid Instagram URL.")
     elif not transcriber.validate_url(insta_url):
         st.error("⚠️ Invalid URL format. Make sure it contains instagram.com/reel/ or instagram.com/p/.")
     else:
-        with st.status("🚀 Processing Instagram Media...", expanded=True) as status:
+        with st.status("🚀 Processing Instagram Media Link...", expanded=True) as status:
             try:
                 st.write("📥 Step 1/3: Extracting audio from Instagram URL...")
-                audio_path = transcriber.download_audio(insta_url)
-                st.write(f"✅ Audio downloaded and converted to MP3: `{audio_path.name}`")
-
-                st.write(f"🧠 Step 2/3: Running Speech-to-Text Whisper AI ({model_choice} model)...")
-                result_data = transcriber.process_url(insta_url, model_name=model_choice)
-                st.write("✅ Transcript generated successfully!")
-
+                result_data = transcriber.process_url(
+                    insta_url,
+                    model_name=model_choice,
+                    openai_api_key=openai_api_key_input.strip() or None
+                )
+                st.write("✅ Audio extracted & transcript generated successfully!")
                 status.update(label="🎉 Processing Complete!", state="complete", expanded=False)
                 st.session_state['result'] = result_data
+            except Exception as e:
+                status.update(label="❌ Error occurred!", state="error", expanded=True)
+                st.error(f"Error details: {str(e)}")
 
+# File Upload Trigger Process
+if 'transmute_file_btn' in locals() and transmute_file_btn:
+    if not uploaded_file:
+        st.error("⚠️ Please select a video or audio file to upload.")
+    else:
+        with st.status("🚀 Processing Uploaded Video/Audio File...", expanded=True) as status:
+            try:
+                temp_upload_dir = Path("output/temp_uploads")
+                temp_upload_dir.mkdir(parents=True, exist_ok=True)
+                temp_file_path = temp_upload_dir / uploaded_file.name
+                with open(temp_file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+
+                st.write("🎵 Step 1/2: Converting uploaded video to 192kbps MP3 audio...")
+                result_data = transcriber.process_file(
+                    temp_file_path,
+                    model_name=model_choice,
+                    openai_api_key=openai_api_key_input.strip() or None
+                )
+                st.write("✅ Transcript generated successfully!")
+                status.update(label="🎉 Processing Complete!", state="complete", expanded=False)
+                st.session_state['result'] = result_data
             except Exception as e:
                 status.update(label="❌ Error occurred!", state="error", expanded=True)
                 st.error(f"Error details: {str(e)}")

@@ -69,13 +69,6 @@ def download_file(filename):
 def transcribe_endpoint():
     """
     Transcribe speech from an Instagram Reel or Post link.
-
-    Request Body (JSON):
-        url (str): Required Instagram post/reel link.
-        model (str): Optional Whisper model size ('tiny', 'base', 'small', 'medium'). Default: 'base'.
-
-    Returns:
-        JSON response with transcribed text, URLs for MP3 & TXT, SRT, VTT, segments, and filenames.
     """
     if request.method == 'OPTIONS':
         return jsonify({"status": "ok"}), 200
@@ -83,6 +76,7 @@ def transcribe_endpoint():
     data = request.get_json(force=True, silent=True) or {}
     url = data.get('url', '').strip()
     model_name = data.get('model', 'base')
+    openai_key = data.get('openai_api_key') or request.headers.get('X-OpenAI-Key')
 
     if not url:
         return jsonify({"error": "Missing Instagram URL"}), 400
@@ -92,7 +86,7 @@ def transcribe_endpoint():
 
     try:
         print(f"[API Engine] Processing request for URL: {url} (Model: {model_name})")
-        result = transcriber.process_url(url, model_name=model_name)
+        result = transcriber.process_url(url, model_name=model_name, openai_api_key=openai_key)
         
         host_url = request.host_url.rstrip('/')
         mp3_filename = result.get('mp3_filename')
@@ -119,6 +113,72 @@ def transcribe_endpoint():
     except Exception as e:
         print(f"[API Engine Error] Error processing URL {url}: {str(e)}")
         return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/upload', methods=['POST', 'OPTIONS'])
+def upload_endpoint():
+    """
+    Direct Video/Audio File Upload Transcribe Endpoint.
+    Workaround for private reels, auth barriers, or cloud IP blocks.
+    """
+    if request.method == 'OPTIONS':
+        return jsonify({"status": "ok"}), 200
+
+    if 'file' not in request.files:
+        return jsonify({"error": "No file uploaded. Please select an MP4, MOV, M4A, or MP3 file."}), 400
+
+    file = request.files['file']
+    model_name = request.form.get('model', 'base')
+    openai_key = request.form.get('openai_api_key') or request.headers.get('X-OpenAI-Key')
+
+    if file.filename == '':
+        return jsonify({"error": "No selected file."}), 400
+
+    temp_path = None
+    try:
+        import tempfile
+        from pathlib import Path
+        temp_dir = Path(tempfile.gettempdir()) / "insta_transcribe_uploads"
+        temp_dir.mkdir(parents=True, exist_ok=True)
+        
+        filename = file.filename
+        temp_path = temp_dir / filename
+        file.save(str(temp_path))
+
+        print(f"[API Engine] Processing uploaded file: {filename}")
+        result = transcriber.process_file(temp_path, model_name=model_name, openai_api_key=openai_key)
+
+        host_url = request.host_url.rstrip('/')
+        mp3_filename = result.get('mp3_filename')
+        txt_filename = result.get('txt_filename')
+        srt_filename = result.get('srt_filename')
+        vtt_filename = result.get('vtt_filename')
+
+        return jsonify({
+            "status": "success",
+            "text": result['text'],
+            "video_id": result.get('video_id'),
+            "segments": result['segments'],
+            "srt": result['srt'],
+            "vtt": result['vtt'],
+            "mp3_filename": mp3_filename,
+            "txt_filename": txt_filename,
+            "mp3_url": f"{host_url}/api/download/{mp3_filename}" if mp3_filename else None,
+            "txt_url": f"{host_url}/api/download/{txt_filename}" if txt_filename else None,
+            "srt_url": f"{host_url}/api/download/{srt_filename}" if srt_filename else None,
+            "vtt_url": f"{host_url}/api/download/{vtt_filename}" if vtt_filename else None,
+            "audio_file": result['audio_file'],
+            "txt_file": result.get('txt_file')
+        })
+    except Exception as e:
+        print(f"[API Engine Error] Error processing uploaded file: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if temp_path and temp_path.exists():
+            try:
+                temp_path.unlink()
+            except Exception:
+                pass
 
 
 if __name__ == '__main__':

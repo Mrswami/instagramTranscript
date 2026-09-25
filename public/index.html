@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Instagramtranscript | Audio Extractor & AI Transcriber</title>
-  <meta name="description" content="Transmute any Instagram Reel or Post URL into MP3 audio and distilled, copyable text transcripts powered by OpenAI Whisper." />
+  <title>Instagram Audio Downloader & AI Transcriber | Instagramtranscript</title>
+  <meta name="description" content="Download audio from any Instagram Reel or Post and convert speech to text transcripts powered by OpenAI Whisper." />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -12,7 +12,7 @@
   <style>
     :root {
       --bg-dark: #090d16;
-      --card-bg: rgba(22, 30, 49, 0.65);
+      --card-bg: rgba(22, 30, 49, 0.7);
       --card-border: rgba(255, 255, 255, 0.08);
       --primary-grad: linear-gradient(135deg, #e1306c 0%, #c13584 40%, #833ab4 70%, #5851db 100%);
       --accent-glow: rgba(225, 48, 108, 0.35);
@@ -46,68 +46,37 @@
       margin: 0 auto;
     }
 
-    /* Navbar */
+    /* Header */
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 20px 0;
       margin-bottom: 30px;
-      flex-wrap: wrap;
-      gap: 16px;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 14px;
       text-decoration: none;
     }
 
     .brand-logo {
-      width: 54px;
-      height: 54px;
-      border-radius: 14px;
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
       box-shadow: 0 4px 20px var(--accent-glow);
       border: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .brand-title {
-      font-size: 1.6rem;
+      font-size: 1.5rem;
       font-weight: 800;
       background: var(--primary-grad);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       letter-spacing: -0.5px;
-    }
-
-    .header-actions {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .status-pill {
-      font-size: 0.82rem;
-      font-weight: 700;
-      padding: 6px 14px;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .status-pill.online {
-      color: #4ade80;
-      border-color: rgba(74, 222, 128, 0.3);
-    }
-
-    .status-pill.offline {
-      color: #fbbf24;
-      border-color: rgba(251, 191, 36, 0.3);
     }
 
     .github-btn {
@@ -162,7 +131,7 @@
       line-height: 1.6;
     }
 
-    /* Glass Input Card */
+    /* Streamlined Glass Card */
     .glass-card {
       background: var(--card-bg);
       backdrop-filter: blur(20px);
@@ -174,52 +143,48 @@
       margin-bottom: 40px;
     }
 
-    .input-row {
+    .input-box-wrapper {
       display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .input-group {
-      display: flex;
-      gap: 12px;
-    }
-
-    @media (max-width: 640px) {
-      .input-group {
-        flex-direction: column;
-      }
-      .hero h1 {
-        font-size: 2.2rem;
-      }
-    }
-
-    .input-field {
-      flex: 1;
-      background: rgba(9, 13, 22, 0.7);
-      border: 1px solid rgba(225, 48, 108, 0.3);
-      border-radius: 14px;
-      padding: 16px 20px;
-      color: #fff;
-      font-size: 1rem;
-      outline: none;
+      align-items: center;
+      background: rgba(9, 13, 22, 0.8);
+      border: 1px solid rgba(225, 48, 108, 0.4);
+      border-radius: 16px;
+      padding: 6px 6px 6px 20px;
       transition: all 0.3s ease;
+      gap: 10px;
     }
 
-    .input-field:focus {
+    .input-box-wrapper:focus-within {
       border-color: #e1306c;
       box-shadow: 0 0 20px rgba(225, 48, 108, 0.3);
     }
 
-    .select-field {
-      background: rgba(9, 13, 22, 0.7);
-      border: 1px solid rgba(225, 48, 108, 0.3);
-      border-radius: 14px;
-      padding: 16px 18px;
-      color: #fff;
-      font-size: 0.95rem;
+    .url-input {
+      flex: 1;
+      background: transparent;
+      border: none;
       outline: none;
+      color: #fff;
+      font-size: 1rem;
+      padding: 10px 0;
+    }
+
+    .paste-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.9rem;
       cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .paste-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
     }
 
     .transmute-btn {
@@ -227,8 +192,8 @@
       color: #fff;
       font-weight: 700;
       font-size: 1rem;
-      padding: 16px 32px;
-      border-radius: 14px;
+      padding: 14px 28px;
+      border-radius: 12px;
       border: none;
       cursor: pointer;
       transition: all 0.3s ease;
@@ -241,10 +206,49 @@
       box-shadow: 0 12px 30px rgba(225, 48, 108, 0.5);
     }
 
+    /* Sub-option toggle for file upload */
+    .file-toggle-area {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--card-border);
+      text-align: center;
+    }
+
+    .toggle-file-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      cursor: pointer;
+      text-decoration: underline;
+      transition: color 0.2s ease;
+    }
+
+    .toggle-file-btn:hover {
+      color: #f472b6;
+    }
+
+    .file-upload-zone {
+      display: none;
+      margin-top: 14px;
+      padding: 24px;
+      border: 2px dashed rgba(225, 48, 108, 0.3);
+      border-radius: 16px;
+      background: rgba(9, 13, 22, 0.5);
+      text-align: center;
+    }
+
+    .file-input {
+      color: #94a3b8;
+      font-size: 0.9rem;
+    }
+
     /* Output Card */
     .output-section {
       display: none;
-      margin-top: 24px;
+      margin-top: 28px;
+      padding-top: 24px;
+      border-top: 1px solid var(--card-border);
     }
 
     .output-header {
@@ -252,6 +256,14 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .action-btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     .copy-btn {
@@ -286,7 +298,7 @@
       font-size: 0.88rem;
       color: #38bdf8;
       font-weight: 600;
-      margin-top: 10px;
+      margin-top: 12px;
       display: block;
     }
 
@@ -337,67 +349,49 @@
     <!-- Header -->
     <header>
       <a href="#" class="brand">
-        <img src="logo.jpg" alt="Instagramtranscript Logo" class="brand-logo" />
+        <img src="logo.jpg" alt="Instagramtranscript Logo" class="brand-logo" onerror="this.style.display='none'" />
         <span class="brand-title">Instagramtranscript</span>
       </a>
-      <div class="header-actions">
-        <div id="backendStatusPill" class="status-pill offline">
-          <span id="statusDot">🟡</span> <span id="statusText">Checking Backend...</span>
-        </div>
-        <button id="apiSettingsBtn" class="github-btn" style="cursor:pointer; background:rgba(225,48,108,0.15); border-color:rgba(225,48,108,0.4);">
-          ⚙️ API Engine Settings
-        </button>
-        <a href="https://github.com/Mrswami/instagramTranscript.git" target="_blank" class="github-btn">
-          <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-          GitHub Repo
-        </a>
-      </div>
+      <a href="https://github.com/Mrswami/instagramTranscript.git" target="_blank" class="github-btn">
+        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub Repo
+      </a>
     </header>
-
-    <!-- API Config Modal -->
-    <div id="apiModal" style="display:none; background: rgba(15,23,42,0.95); border: 1px solid rgba(225,48,108,0.4); border-radius: 16px; padding: 20px; margin-bottom: 24px;">
-      <h4 style="margin-bottom:8px; color:#f472b6;">⚙️ Python API Endpoint Configuration</h4>
-      <p style="font-size:0.88rem; color:#94a3b8; margin-bottom:12px;">Configure your backend REST API endpoint URL (Local PC or Cloud Hosted on Render/Railway/Cloud Run):</p>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
-        <input type="text" id="apiEndpointInput" class="input-field" style="padding:10px 14px; font-size:0.9rem;" placeholder="e.g. https://instagramtranscript-backend.onrender.com/api/transcribe" />
-        <button id="saveApiBtn" class="transmute-btn" style="padding:10px 20px; font-size:0.9rem; white-space:nowrap;">Save Engine URL</button>
-      </div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-        <span style="font-size:0.8rem; color:#94a3b8;">Quick Presets:</span>
-        <button id="presetHttpsBtn" class="copy-btn" style="font-size:0.8rem; padding:4px 10px; background:rgba(225,48,108,0.2); border-color:rgba(225,48,108,0.5);">🔒 HTTPS Cloud API</button>
-        <button id="presetLocalBtn" class="copy-btn" style="font-size:0.8rem; padding:4px 10px;">💻 Local Host (http://localhost:5000)</button>
-      </div>
-      <span id="apiSavedMsg" style="display:none; color:#4ade80; font-size:0.85rem; margin-top:8px;">✅ Endpoint saved! Checking connection...</span>
-    </div>
 
     <!-- Hero -->
     <section class="hero">
-      <div class="hero-badge">✨ Multi-Provider Media Downloader & OpenAI Whisper AI</div>
-      <h1>Transmute Instagram Links to Audio & Transcripts</h1>
-      <p>Enter any Instagram Reel or Post URL below to extract high-bitrate MP3 audio and generate complete copyable text transcripts powered by OpenAI Whisper AI.</p>
+      <div class="hero-badge">✨ Instagram Audio Downloader & AI Transcriber</div>
+      <h1>Download Instagram Audio & AI Transcribe</h1>
+      <p>Paste any Instagram Reel or Post link to extract 192kbps MP3 audio and generate copyable text transcripts powered by OpenAI Whisper.</p>
     </section>
 
-    <!-- Transmute Input Card -->
+    <!-- Clean Main Input Card -->
     <main class="glass-card">
-      <div class="input-row">
-        <div class="input-group">
-          <input type="url" id="instaUrl" class="input-field" placeholder="Paste Instagram Reel URL (e.g. https://www.instagram.com/reel/Cxxxxxx/)" />
-          <select id="whisperModelSelect" class="select-field" title="Select Whisper Model Speed & Accuracy">
-            <option value="base" selected>⚡ Base Model (Fast & Accurate)</option>
-            <option value="tiny">🚀 Tiny Model (Ultra Fast)</option>
-            <option value="small">🎯 Small Model (Higher Accuracy)</option>
-            <option value="medium">🧠 Medium Model (Maximum Precision)</option>
-          </select>
-          <button id="transmuteBtn" class="transmute-btn">✨ Transmute Link</button>
+      <div class="input-box-wrapper">
+        <input type="url" id="instaUrl" class="url-input" placeholder="Paste Instagram Reel or Post link..." />
+        <button id="pasteBtn" class="paste-btn">📋 Paste</button>
+        <button id="transmuteBtn" class="transmute-btn">⚡ Extract & Transcribe</button>
+      </div>
+
+      <!-- Optional Direct Video File Upload Toggle -->
+      <div class="file-toggle-area">
+        <button id="toggleFileBtn" class="toggle-file-btn">📁 Need to process a downloaded video file directly?</button>
+        <div id="fileUploadZone" class="file-upload-zone">
+          <p style="font-size:0.88rem; color:#94a3b8; margin-bottom:12px;">Select or drop an MP4, MOV, M4A, or MP3 video file:</p>
+          <input type="file" id="mediaFileInput" class="file-input" accept="video/mp4,video/quicktime,audio/mpeg,audio/mp4,audio/wav,audio/x-m4a" />
+          <div style="margin-top:12px;">
+            <button id="uploadProcessBtn" class="transmute-btn" style="padding:10px 20px; font-size:0.9rem;">Transmute Uploaded File</button>
+          </div>
         </div>
       </div>
+
       <span id="statusBadge" class="status-badge"></span>
 
       <!-- Output Container -->
       <div id="outputSection" class="output-section">
-        <div class="output-header" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-          <span style="font-weight:700; color:#f472b6;">📄 Transmuted MP3 & Transcript</span>
-          <div style="margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap;">
+        <div class="output-header">
+          <span style="font-weight:700; color:#f472b6;">📄 Audio Preview & Text Transcript</span>
+          <div class="action-btn-group">
             <a id="downloadMp3Btn" class="github-btn" style="display:none;" target="_blank" download>🎵 Download MP3</a>
             <a id="downloadTxtBtn" class="github-btn" style="display:none;" target="_blank" download>📄 Download TXT</a>
             <a id="downloadSrtBtn" class="github-btn" style="display:none;" target="_blank" download>🎬 Download SRT</a>
@@ -413,13 +407,13 @@
     <section class="features-grid">
       <div class="feature-item">
         <div class="feature-icon">🎧</div>
-        <h3>Instagram → MP3 Audio</h3>
-        <p>Extracts media stream from Reel links (supports long 3+ minute videos) and converts directly to 192kbps MP3 audio.</p>
+        <h3>Instagram → 192kbps MP3</h3>
+        <p>Extracts audio tracks from Reels and Post links cleanly and encodes to high-quality MP3 audio.</p>
       </div>
       <div class="feature-item">
         <div class="feature-icon">🧠</div>
         <h3>OpenAI Whisper Speech-to-Text</h3>
-        <p>Distills word-for-word spoken speech into structured transcripts with complete accuracy using PyTorch models.</p>
+        <p>Distills word-for-word spoken speech into structured transcripts with complete accuracy using OpenAI Whisper.</p>
       </div>
       <div class="feature-item">
         <div class="feature-icon">📋</div>
@@ -430,14 +424,20 @@
 
     <!-- Footer -->
     <footer>
-      <p>© 2026 Instagramtranscript • Built with Python, Flask, Whisper AI & Firebase Hosting</p>
+      <p>© 2026 Instagramtranscript • Fast Instagram Audio Downloader & AI Speech-to-Text Engine</p>
     </footer>
   </div>
 
   <script>
     const transmuteBtn = document.getElementById('transmuteBtn');
+    const pasteBtn = document.getElementById('pasteBtn');
     const instaUrl = document.getElementById('instaUrl');
-    const whisperModelSelect = document.getElementById('whisperModelSelect');
+    
+    const toggleFileBtn = document.getElementById('toggleFileBtn');
+    const fileUploadZone = document.getElementById('fileUploadZone');
+    const mediaFileInput = document.getElementById('mediaFileInput');
+    const uploadProcessBtn = document.getElementById('uploadProcessBtn');
+
     const outputSection = document.getElementById('outputSection');
     const transcriptBox = document.getElementById('transcriptBox');
     const copyBtn = document.getElementById('copyBtn');
@@ -446,103 +446,70 @@
     const downloadSrtBtn = document.getElementById('downloadSrtBtn');
     const audioPreview = document.getElementById('audioPreview');
     const statusBadge = document.getElementById('statusBadge');
-    
-    // Status Pill Elements
-    const backendStatusPill = document.getElementById('backendStatusPill');
-    const statusDot = document.getElementById('statusDot');
-    const statusText = document.getElementById('statusText');
 
-    // API Modal settings
-    const apiSettingsBtn = document.getElementById('apiSettingsBtn');
-    const apiModal = document.getElementById('apiModal');
-    const apiEndpointInput = document.getElementById('apiEndpointInput');
-    const saveApiBtn = document.getElementById('saveApiBtn');
-    const apiSavedMsg = document.getElementById('apiSavedMsg');
-    const presetHttpsBtn = document.getElementById('presetHttpsBtn');
-    const presetLocalBtn = document.getElementById('presetLocalBtn');
-
-    // Default HTTPS Cloud Endpoint matching site protocol
-    const CLOUD_HTTPS_ENDPOINT = 'https://instagramtranscript-backend.onrender.com/api/transcribe';
-    const LOCAL_HTTP_ENDPOINT = 'http://localhost:5000/api/transcribe';
-
-    // Dynamic Protocol-Matching Endpoint Resolution
-    function getApiUrl() {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('api')) return urlParams.get('api');
-      const saved = localStorage.getItem('custom_api_url');
-      if (saved) return saved;
-
-      // If running on local computer, default to localhost HTTP
+    // Dynamic API Base URL Resolution
+    function getApiEndpoint(path) {
       if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return LOCAL_HTTP_ENDPOINT;
+        return `http://localhost:5000${path}`;
       }
-
-      // If viewing web app over HTTPS, default to HTTPS Cloud API endpoint matching protocol
-      if (window.location.protocol === 'https:') {
-        return CLOUD_HTTPS_ENDPOINT;
-      }
-
-      return LOCAL_HTTP_ENDPOINT;
+      return path; // Relative path when hosted
     }
 
-    function getHealthUrl(transcribeUrl) {
+    // 1-Click Clipboard Paste Handler
+    pasteBtn.addEventListener('click', async () => {
       try {
-        const u = new URL(transcribeUrl);
-        return `${u.protocol}//${u.host}/health`;
-      } catch (e) {
-        return 'http://localhost:5000/health';
-      }
-    }
-
-    async function checkBackendHealth() {
-      const apiUrl = getApiUrl();
-      const healthUrl = getHealthUrl(apiUrl);
-      try {
-        const res = await fetch(healthUrl, { method: 'GET', mode: 'cors', signal: AbortSignal.timeout(4000) });
-        if (res.ok) {
-          const data = await res.json();
-          backendStatusPill.className = 'status-pill online';
-          statusDot.innerText = '🟢';
-          statusText.innerText = data.model_cached ? 'Backend Online (Model Ready)' : 'Backend Online';
-        } else {
-          throw new Error('Health returned non-200');
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          instaUrl.value = text.trim();
         }
-      } catch (e) {
-        backendStatusPill.className = 'status-pill offline';
-        statusDot.innerText = '🟡';
-        statusText.innerText = window.location.protocol === 'https:' && apiUrl.startsWith('http://') ?
-          'Mixed Content Notice (Use HTTPS Cloud API)' : 'Backend Standby / Local Server Needed';
+      } catch (err) {
+        instaUrl.focus();
+      }
+    });
+
+    // File Toggle Handler
+    toggleFileBtn.addEventListener('click', () => {
+      const isHidden = fileUploadZone.style.display === 'none' || fileUploadZone.style.display === '';
+      fileUploadZone.style.display = isHidden ? 'block' : 'none';
+      toggleFileBtn.innerText = isHidden ? '🔼 Hide Direct File Upload' : '📁 Need to process a downloaded video file directly?';
+    });
+
+    function renderResultData(data) {
+      statusBadge.innerText = '✅ Audio extracted & transcribed successfully!';
+      transcriptBox.innerText = data.text || 'No spoken speech detected in audio track.';
+
+      if (data.mp3_url) {
+        downloadMp3Btn.href = data.mp3_url;
+        downloadMp3Btn.style.display = 'inline-flex';
+        audioPreview.src = data.mp3_url + '?download=false';
+        audioPreview.style.display = 'block';
+      } else {
+        downloadMp3Btn.style.display = 'none';
+        audioPreview.style.display = 'none';
+      }
+
+      if (data.txt_url) {
+        downloadTxtBtn.href = data.txt_url;
+        downloadTxtBtn.style.display = 'inline-flex';
+      } else if (data.text) {
+        const txtBlob = new Blob([data.text], { type: 'text/plain;charset=utf-8' });
+        downloadTxtBtn.href = URL.createObjectURL(txtBlob);
+        downloadTxtBtn.download = `${data.video_id || 'transcript'}.txt`;
+        downloadTxtBtn.style.display = 'inline-flex';
+      }
+
+      if (data.srt_url) {
+        downloadSrtBtn.href = data.srt_url;
+        downloadSrtBtn.style.display = 'inline-flex';
+      } else if (data.srt) {
+        const srtBlob = new Blob([data.srt], { type: 'text/plain;charset=utf-8' });
+        downloadSrtBtn.href = URL.createObjectURL(srtBlob);
+        downloadSrtBtn.download = `${data.video_id || 'captions'}.srt`;
+        downloadSrtBtn.style.display = 'inline-flex';
       }
     }
 
-    apiEndpointInput.value = getApiUrl();
-    checkBackendHealth();
-
-    apiSettingsBtn.addEventListener('click', () => {
-      apiModal.style.display = apiModal.style.display === 'none' ? 'block' : 'none';
-    });
-
-    function updateSavedEndpoint(newUrl) {
-      localStorage.setItem('custom_api_url', newUrl);
-      apiEndpointInput.value = newUrl;
-      apiSavedMsg.style.display = 'block';
-      checkBackendHealth();
-      setTimeout(() => apiSavedMsg.style.display = 'none', 3000);
-    }
-
-    saveApiBtn.addEventListener('click', () => {
-      const val = apiEndpointInput.value.trim();
-      if (val) updateSavedEndpoint(val);
-    });
-
-    presetHttpsBtn.addEventListener('click', () => {
-      updateSavedEndpoint(CLOUD_HTTPS_ENDPOINT);
-    });
-
-    presetLocalBtn.addEventListener('click', () => {
-      updateSavedEndpoint(LOCAL_HTTP_ENDPOINT);
-    });
-
+    // URL Transcribe Handler
     transmuteBtn.addEventListener('click', async () => {
       const url = instaUrl.value.trim();
       if (!url) {
@@ -550,120 +517,99 @@
         return;
       }
 
-      const activeApiUrl = getApiUrl();
-      const chosenModel = whisperModelSelect.value;
+      const endpoint = getApiEndpoint('/api/transcribe');
 
       transmuteBtn.disabled = true;
-      transmuteBtn.innerText = '⏳ Transmuring Media...';
+      transmuteBtn.innerText = '⏳ Processing...';
       outputSection.style.display = 'block';
-      statusBadge.innerText = '🔄 Step 1/3: Extracting media from Instagram URL...';
-      transcriptBox.innerText = `[Pipeline Step 1/3]: Connecting to Instagram media downloader...\nTarget API Endpoint: ${activeApiUrl}\nWhisper AI Model: '${chosenModel}'\n\nPlease wait while audio is processed...`;
-
-      let stepTimer = setTimeout(() => {
-        statusBadge.innerText = '⚡ Step 2/3: Converting video track to 192kbps MP3 audio...';
-        transcriptBox.innerText += `\n[Pipeline Step 2/3]: Encoding MP3 audio file...`;
-      }, 3500);
-
-      let stepTimer2 = setTimeout(() => {
-        statusBadge.innerText = '🧠 Step 3/3: Running OpenAI Whisper AI speech-to-text inference...';
-        transcriptBox.innerText += `\n[Pipeline Step 3/3]: Running Whisper AI inference on speech audio...`;
-      }, 7000);
+      statusBadge.innerText = '🔄 Extracting audio from Instagram Reel...';
+      transcriptBox.innerText = `Connecting to Instagram media downloader...\nPlease wait while audio is extracted and transcribed...`;
 
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+        const timeoutId = setTimeout(() => controller.abort(), 120000);
 
-        const response = await fetch(activeApiUrl, {
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: url, model: chosenModel }),
+          body: JSON.stringify({ url: url }),
           signal: controller.signal
         });
         clearTimeout(timeoutId);
 
-        clearTimeout(stepTimer);
-        clearTimeout(stepTimer2);
-
         if (response.ok) {
           const data = await response.json();
-          statusBadge.innerText = '✅ Media transmuted & transcribed successfully!';
-          transcriptBox.innerText = data.text || 'No spoken speech detected in audio track.';
-
-          // Set up MP3 download link & preview player
-          if (data.mp3_url) {
-            downloadMp3Btn.href = data.mp3_url;
-            downloadMp3Btn.style.display = 'inline-flex';
-            audioPreview.src = data.mp3_url + '?download=false';
-            audioPreview.style.display = 'block';
-          } else {
-            downloadMp3Btn.style.display = 'none';
-            audioPreview.style.display = 'none';
-          }
-
-          // Set up TXT download link
-          if (data.txt_url) {
-            downloadTxtBtn.href = data.txt_url;
-            downloadTxtBtn.style.display = 'inline-flex';
-          } else if (data.text) {
-            // Fallback blob download
-            const txtBlob = new Blob([data.text], { type: 'text/plain;charset=utf-8' });
-            downloadTxtBtn.href = URL.createObjectURL(txtBlob);
-            downloadTxtBtn.download = `${data.video_id || 'transcript'}.txt`;
-            downloadTxtBtn.style.display = 'inline-flex';
-          }
-
-          // Set up SRT download link
-          if (data.srt_url) {
-            downloadSrtBtn.href = data.srt_url;
-            downloadSrtBtn.style.display = 'inline-flex';
-          } else if (data.srt) {
-            const srtBlob = new Blob([data.srt], { type: 'text/plain;charset=utf-8' });
-            downloadSrtBtn.href = URL.createObjectURL(srtBlob);
-            downloadSrtBtn.download = `${data.video_id || 'captions'}.srt`;
-            downloadSrtBtn.style.display = 'inline-flex';
-          }
+          renderResultData(data);
         } else {
           const errData = await response.json().catch(() => ({}));
           throw new Error(errData.error || `Server HTTP Error ${response.status}`);
         }
       } catch (err) {
-        clearTimeout(stepTimer);
-        clearTimeout(stepTimer2);
-        console.warn('API fetch notification:', err);
-        statusBadge.innerText = '💡 Processing Status & Server Diagnostics';
-        
-        let helpNotice = '';
-        if (window.location.protocol === 'https:' && activeApiUrl.startsWith('http://localhost')) {
-          helpNotice = `⚠️ Mixed Content Protocol Notice:\n` +
-            `Your web browser is viewing this web app over HTTPS (https://instagramtranscript.web.app), while your API endpoint is set to local HTTP (${activeApiUrl}).\n\n` +
-            `To fix this:\n` +
-            `1. Click top right ⚙️ API Engine Settings and select 🔒 HTTPS Cloud API (https://instagramtranscript-backend.onrender.com/api/transcribe).\n` +
-            `2. Or run local server: python server.py\n` +
-            `3. Or run CLI directly in terminal: python cli.py "${url}"`;
-        } else {
-          helpNotice = `Unable to reach backend at ${activeApiUrl} (${err.message}).\n\n` +
-            `Steps to resolve:\n` +
-            `1. Run local backend server: python server.py\n` +
-            `2. Or click top right ⚙️ API Engine Settings and set a live HTTPS Cloud API URL (see DEPLOYMENT.md)\n` +
-            `3. Or transcribe via CLI: python cli.py "${url}" --model ${chosenModel}`;
-        }
-        transcriptBox.innerText = helpNotice;
+        statusBadge.innerText = '⚠️ Connection Notice';
+        transcriptBox.innerText = `Unable to connect to backend server (${err.message}).\n\n` +
+          `Please make sure your local backend server is running in terminal:\n` +
+          `python server.py\n\n` +
+          `Alternatively, click "📁 Need to process a downloaded video file directly?" above to upload a media file directly!`;
       } finally {
         transmuteBtn.disabled = false;
-        transmuteBtn.innerText = '✨ Transmute Link';
+        transmuteBtn.innerText = '⚡ Extract & Transcribe';
       }
     });
 
+    // File Upload Handler
+    uploadProcessBtn.addEventListener('click', async () => {
+      const files = mediaFileInput.files;
+      if (!files || files.length === 0) {
+        alert('Please select a video or audio file to upload.');
+        return;
+      }
 
+      const endpoint = getApiEndpoint('/api/upload');
+      const formData = new FormData();
+      formData.append('file', files[0]);
+
+      uploadProcessBtn.disabled = true;
+      uploadProcessBtn.innerText = '⏳ Processing...';
+      outputSection.style.display = 'block';
+      statusBadge.innerText = '🔄 Uploading & converting media file...';
+      transcriptBox.innerText = `Uploading '${files[0].name}' to engine...\nPlease wait while audio is encoded and transcribed...`;
+
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 180000);
+
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          body: formData,
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          const data = await response.json();
+          renderResultData(data);
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `Upload Error ${response.status}`);
+        }
+      } catch (err) {
+        statusBadge.innerText = '❌ Upload Failed';
+        transcriptBox.innerText = `Failed to process uploaded file: ${err.message}\n\nPlease ensure your Python server is running (python server.py).`;
+      } finally {
+        uploadProcessBtn.disabled = false;
+        uploadProcessBtn.innerText = 'Transmute Uploaded File';
+      }
+    });
+
+    // 1-Click Copy Handler
     copyBtn.addEventListener('click', () => {
       const text = transcriptBox.innerText;
       if (!text) return;
       navigator.clipboard.writeText(text).then(() => {
-        copyBtn.innerText = '✅ Copied to Clipboard!';
+        copyBtn.innerText = '✅ Copied!';
         setTimeout(() => copyBtn.innerText = '📋 Copy Transcript', 2500);
       });
     });
   </script>
 </body>
 </html>
-

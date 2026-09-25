@@ -11,7 +11,10 @@ Usage:
 import sys
 import argparse
 from pathlib import Path
+from dotenv import load_dotenv
 from transcriber import InstagramTranscriber
+
+load_dotenv()
 
 
 def main() -> None:
@@ -33,6 +36,11 @@ def main() -> None:
         default="output",
         help="Target output directory for audio and transcript files (default: output)"
     )
+    parser.add_argument(
+        "--api-key",
+        default=None,
+        help="Optional OpenAI API Key for fast cloud transcription using whisper-1 API"
+    )
 
     args = parser.parse_args()
 
@@ -40,7 +48,7 @@ def main() -> None:
     transcriber = InstagramTranscriber(output_dir=args.outdir)
 
     try:
-        result = transcriber.process_url(args.url, model_name=args.model)
+        result = transcriber.process_url(args.url, model_name=args.model, openai_api_key=args.api_key)
 
         print("\n" + "=" * 50)
         print("=== TRANSCRIPTION COMPLETE ===")

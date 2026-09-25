@@ -43,9 +43,15 @@ class TestInstagramTranscriber(unittest.TestCase):
             self.assertFalse(self.transcriber.validate_url(url), f"Should be invalid: {url}")
 
     def test_shortcode_extraction(self):
-        url = "https://www.instagram.com/reel/DdZxkZRkZL4/?utm_source=ig_web_copy_link"
-        shortcode = self.transcriber.extract_shortcode(url)
-        self.assertEqual(shortcode, "DdZxkZRkZL4")
+        urls_and_expected = [
+            ("https://www.instagram.com/reel/DdZxkZRkZL4/?utm_source=ig_web_copy_link", "DdZxkZRkZL4"),
+            ("https://www.instagram.com/share/p/C7X_X11v8-0/", "C7X_X11v8-0"),
+            ("https://www.instagram.com/share/reel/C7X_X11v8-0/?igsh=123", "C7X_X11v8-0"),
+            ("https://ddinstagram.com/reel/DdZxkZRkZL4/", "DdZxkZRkZL4"),
+        ]
+        for url, expected in urls_and_expected:
+            shortcode = self.transcriber.extract_shortcode(url)
+            self.assertEqual(shortcode, expected, f"Failed for URL: {url}")
 
     def test_ffmpeg_mp3_conversion(self):
         # Generate a 1-second synthetic WAV audio file
@@ -97,6 +103,12 @@ class TestFlaskAPIServer(unittest.TestCase):
 
     def test_invalid_url_transcribe_endpoint(self):
         response = self.client.post('/api/transcribe', json={'url': 'invalid_url'})
+        self.assertEqual(response.status_code, 400)
+        json_data = response.get_json()
+        self.assertIn('error', json_data)
+
+    def test_upload_missing_file_endpoint(self):
+        response = self.client.post('/api/upload')
         self.assertEqual(response.status_code, 400)
         json_data = response.get_json()
         self.assertIn('error', json_data)
